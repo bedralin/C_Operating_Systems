@@ -32,9 +32,9 @@ void runpipe(Child *child, int array_count) {
     int k = 0;
     int status;
     printf("array_count is %d\n",array_count); 
-    for (i = 0; i <= array_count; i++) {
-        pipe(child[i].fd);
-    }
+    //for (i = 0; i <= array_count; i++) {
+      //  pipe(child[i].fd);
+    //}
     
 /*
     for (i = 0; i <= array_count; i++) {
@@ -63,6 +63,7 @@ void runpipe(Child *child, int array_count) {
 	i = 0;
 
         for (i = 0; i < array_count; i++) {
+	pipe(child[i].fd);
 	pid = fork();
 	//wait(&status);
 	j = j + 1;
@@ -95,11 +96,12 @@ void runpipe(Child *child, int array_count) {
                 printf("Error has occured. You might have put in wrong command.\n");
                 //exit(127);
             }
+	    
         }
         else {  // parent
 	    pid = fork();
 	    printf("Parent (child[i].args[0] = %s) speaking...\n", child[i].args[0]);
-            wait(&status);
+            //wait(&status);
             //dup2(child[i].fd[1], 1);
             //close(child[i].fd[0]);  // parent does not need this end of pipe 
             printf("wow man..\n");
@@ -109,6 +111,7 @@ void runpipe(Child *child, int array_count) {
                 printf("Error has occured. You might have put in wrong command.\n");
                 //exit(127);
             }
+	    i++;
         }
 	j++;
 	i = i + 1;

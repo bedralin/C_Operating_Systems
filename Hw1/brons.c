@@ -15,30 +15,27 @@
 #include <sys/types.h>
 #define BUFFER_SIZE 80
 #define ARR_SIZE 80
-#define DEBUG 1  /* In case you want debug messages */
+//#define DEBUG 1  /* In case you want debug messages */
 
 typedef struct children {
     char *args[ARR_SIZE]; //command to execute
     int fd[2]; //pair of pipes per child
 }Child;
 
-Child child[9];
+Child child[10];
 
 
-void runpipe(Child *child, int array_count) {
-    int pid;
-}
 
 void
-runsource(int pfd[])	/* run the first part of the pipeline, cmd1 */
+run_source(Child *child, int child_num, int array_count)	/* run the first part of the pipeline, cmd1 */
 {
     int pid;	/* we don't use the process ID here, but you may wnat to print it for debugging */
 
     switch (pid = fork()) {
 
     case 0: /* child */
-	dup2(pfd[1], 1);    /* this end of the pipe becomes the standard output */
-	close(pfd[0]);	    /* this process don't need the other end */
+	dup2(child[child_num].fd[1], 1);    /* this end of the pipe becomes the standard output */
+	close(child[child_num].fd[0]);	    /* this process don't need the other end */
 	execvp(child[child_num].args[0], child[child_num].args);	/* run the command */
 	perror(child[child_num].args[0]);    /* it failed! */
 
@@ -52,15 +49,15 @@ runsource(int pfd[])	/* run the first part of the pipeline, cmd1 */
 }
 
 void
-rundest(Child *child, int pfd[], int child_num)  /* run the second part of the pipeline, cmd2 */
+run_dest(Child *child, int child_num, int array_count)  /* run the second part of the pipeline, cmd2 */
 {
     int pid;
 
     switch (pid = fork()) {
 
     case 0: /* child */
-	dup2(pfd[0], 0);    /* this end of the pipe becomes the standard input */
-	close(pfd[1]);	    /* this process doesn't need the other end */
+	dup2(child[child_num-1].fd[0], 0);    /* this end of the pipe becomes the standard input */
+	close(child[child_num-1].fd[1]);	    /* this process doesn't need the other end */
 	execvp(child[child_num].args[0], child[child_num].args);	/* run the command */
 	perror(child[child_num].args[0]);    /* it failed! */
 
@@ -126,7 +123,7 @@ int main(int argc, char *argv[], char *envp[]){
    
     char * array[10][10];
 
-    int fd[9][2], nbytes;
+    int fd[10][2], nbytes;
     int status;
     int i, j;
 
@@ -166,6 +163,7 @@ int main(int argc, char *argv[], char *envp[]){
 	    }
 	    if (strncmp(args[n], "|", 1) == 0) {
 		child[array_count].args[n1] = 0;
+		
 #ifdef DEBUG
 		printf("Array null is %s\n",child[array_count].args[n1]);
 #endif
@@ -173,11 +171,68 @@ int main(int argc, char *argv[], char *envp[]){
 		array_count++;
 	    }
 	}
+
 	child[array_count].args[n1] = 0;
 	n1 = 0;
 	printf(" WOW \n");
 	//n = 0;
-	runpipe(child, array_count);
+	//runpipe(child, array_count);
+
+	int pid, status;
+	int child_num = 0;
+	int pipe_count = 0;
+	int count = 0;
+	int i = 0;
+
+	for (i=0; i <= array_count; i++) 
+            pipe(child[i].fd);
+            if (array_count == 0) {
+                switch (pid = fork()) {
+                
+                case 0: // child
+                    execvp(child[0].args[0], &child[0].args[0]);
+                    perror(child[0].args[0]);
+
+                default:  // parent does nothing
+                    break;
+                case -1:
+                    perror("fork");
+                    exit(1);
+                }
+                break;
+            }
+	else {
+
+	while (child_num < array_count) {
+
+	    int pid;
+	    run_source(child, child_num, array_count);
+
+	    child_num++;
+	    run_dest(child, child_num, array_count);
+
+	    child_num++;
+	
+            close(child[pipe_count].fd[0]); close(child[pipe_count].fd[1]); // close both file descriptors on pipe
+	    
+	    pipe_count++;
+	
+	    while((pid = wait(&status)) != -1) {  // pick up dead children
+		fprintf(stderr, "process %d exits with %d\n",pid, WEXITSTATUS(status));
+		//exit(0);
+	    dup2(child[child_num-1].fd[1],1);
+	    close(child[child_num-1].fd[0]);	
+	    }
+        }
+	}
+
+	close(child[child_num+1].fd[0]); close(child[child_num+1].fd[1]); // close both file descriptors on pipe
+	close(child[child_num].fd[0]); close(child[child_num].fd[1]);
+	array_count = 0;
+	child_num = 0;
+	pipe_count = 0;
+	count = 0;	
+
 /*
 	pid = fork();
 	if (pid == -1) {
