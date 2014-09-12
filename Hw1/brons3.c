@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #define BUFFER_SIZE 80
 #define ARR_SIZE 80
+
 //#define DEBUG 1  /* In case you want debug messages */
 
 typedef struct children {
@@ -183,58 +184,78 @@ int main(int argc, char *argv[], char *envp[]){
 	int count = 0;
 	int i = 0;
 
-	for (i=0; i <= array_count; i++) 
-            pipe(child[i].fd);
-            if (array_count == 0) {
-                switch (pid = fork()) {
-                
-                case 0: // child
-                    execvp(child[0].args[0], &child[0].args[0]);
-                    perror(child[0].args[0]);
-		    //break;
-
-                default:  // parent does nothing
-                    break;
-                case -1:
-                    perror("fork");
-                    exit(1);
-                }
-                break;
-            }
-	else {
-
-	while (child_num < array_count) {
-
-	    int pid;
-	    if (child_num == 0) {	    
-	    run_source(child, child_num, (array_count));
-
-	    child_num++;
+	int pipefd[20];
+/*
+	for (i = 0; i < array_count; i++) {
+	    if (pipe(&pipefd[i*2]))  {
+		//perror(pipefd[i*2]);
 	    }
-
-	    run_dest(child, child_num, (array_count));
-
-	    child_num++;
-	
-            close(child[pipe_count].fd[0]); close(child[pipe_count].fd[1]); // close both file descriptors on pipe
-	    
-	    pipe_count++;
-	
-	    while((pid = wait(&status)) != -1) {  // pick up dead children
-		fprintf(stderr, "process %d exits with %d\n",pid, WEXITSTATUS(status));
-		//exit(0);
-	    dup2(child[child_num-1].fd[1],1);
-	    close(child[child_num-1].fd[0]);	
-	    }
-        }
 	}
-	
-	close(child[child_num+1].fd[0]); close(child[child_num+1].fd[1]); // close both file descriptors on pipe
-	close(child[child_num].fd[0]); close(child[child_num].fd[1]);
+*/
+
+	for (i = 0; i <= array_count; i++) {
+	    pipe(child[i].fd);
+	    printf("i in pipe is %d\n",i);
+	}
+
+	i = 0;
+	printf("i is %d\n",i); 
+	int commandc = 0;
+	while (i <= array_count) {
+	    pid = fork();
+	    if (pid == 0) {
+		// child gets input from previous command,
+		// if it's not the first command
+		if (i != 0) {
+		    if (dup2(child[i-1].fd[0],0) < 0) {
+			perror("dup2a");
+			exit(1);
+		    }
+		    close(child[i-1].fd[1]);		    
+		    printf("check 1\n");
+		}
+		sleep(1);
+		// child outputs to next command, 
+		// if it's not last command
+		if ( i < array_count) {
+		    if (dup2(child[i].fd[1], 1) < 0) {
+			perror("dup2b");
+			exit(1);
+		    }
+                    close(child[i].fd[0]);
+		    printf("check 2\n");
+		}
+		sleep(1);
+		//close(pipefd[(commandc-1)*2]); close(pipefd[commandc*2+1]);
+		if (execvp(child[i].args[0], &child[i].args[0])) {
+		    perror("execvp");
+		    exit(1);
+		}
+		wait(&status);	
+	    }
+	    else if (pid == 1) {
+		printf("parent is here!\n");
+	    } 
+	    else if ( pid < 0) {
+		perror("fork");
+		exit(1);
+	    }
+	    printf("inside while loop... i is %d\n",i);
+	    i++;
+	    commandc++;
+	}
+
+	i=0;	
+	commandc=0;
 	array_count = 0;
 	child_num = 0;
 	pipe_count = 0;
 	count = 0;
+	
+	while ((pid = wait(&status)) != -1)
+	    fprintf(stderr, "Process #%d completed and exited.\n", pid);
+	//sleep(1);	
+	//printf("ee468>> "); /* Prompt */
 	
 
     }    
