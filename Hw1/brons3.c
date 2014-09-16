@@ -183,6 +183,7 @@ int main(int argc, char *argv[], char *envp[]){
 	int pipe_count = 0;
 	int count = 0;
 	int i = 0;
+	int pidd[10];
 
 	int pipefd[20];
 /*
@@ -193,58 +194,79 @@ int main(int argc, char *argv[], char *envp[]){
 	}
 */
 
-	for (i = 0; i <= array_count; i++) {
+	for (i = 0; i < array_count; i++) {
 	    pipe(child[i].fd);
-	    printf("i in pipe is %d\n",i);
+	    //printf("i in pipe is %d\n",i);
 	}
 
 	i = 0;
-	printf("i is %d\n",i); 
+	printf("array_count is %d\n",array_count); 
 	int commandc = 0;
 	while (i <= array_count) {
-	    pid = fork();
-	    if (pid == 0) {
+	    pidd[i] = fork();
+	    if (pidd[i] == 0) {
+		printf("Child is here! with i=%d\n",i);
 		// child gets input from previous command,
 		// if it's not the first command
 		if (i != 0) {
+		    close(child[i-1].fd[1]);
 		    if (dup2(child[i-1].fd[0],0) < 0) {
-			perror("dup2a");
-			exit(1);
+                        printf("error on check1 with i=%d\n",i);
+			perror("dup2");
+			//exit(1);
 		    }
-		    close(child[i-1].fd[1]);		    
-		    printf("check 1\n");
+		    //close(child[i-1].fd[1]);		    
+		    printf("check 1 with i=%d\n",i);
+		    sleep(1);
 		}
-		sleep(1);
 		// child outputs to next command, 
 		// if it's not last command
-		if ( i < array_count) {
+		if (i < array_count) {
+		    close(child[i].fd[0]);
 		    if (dup2(child[i].fd[1], 1) < 0) {
-			perror("dup2b");
-			exit(1);
+			printf("error on check2 with i=%d\n",i);
+			perror("dup2");
+			//exit(1);
 		    }
-                    close(child[i].fd[0]);
-		    printf("check 2\n");
+                    //close(child[i].fd[0]);
+		    printf("check 2 with i=%d\n",i);
+		    sleep(1);
 		}
-		sleep(1);
 		//close(pipefd[(commandc-1)*2]); close(pipefd[commandc*2+1]);
 		if (execvp(child[i].args[0], &child[i].args[0])) {
 		    perror("execvp");
-		    exit(1);
+		    //exit(1);
 		}
-		wait(&status);	
+		exit(1);	
+		//wait(&status);	
 	    }
-	    else if (pid == 1) {
-		printf("parent is here!\n");
+	    else if ((pidd[i] != 0) && (pidd[i] > 0)) {
+		printf("parent is here! with i=%d\n",i);
+		//close(child[i].fd[0]); close(child[i].fd[1]);  // parent close all pipes
 	    } 
-	    else if ( pid < 0) {
+	    else if ( pidd[i] < 0) {
 		perror("fork");
-		exit(1);
+		//exit(1);
 	    }
-	    printf("inside while loop... i is %d\n",i);
-	    i++;
-	    commandc++;
-	}
+	    //wait(&status);
+	    //printf("inside while loop... i is %d\n",i);
+	    //if ((i != 0) && (i < array_count)) {
+	//	close(child[i-1].fd[0]); close(child[i-1].fd[1]);
+	  //  }
+	    while ((pidd[i] = wait(&status)) != -1)
+		printf("process %d Done!\n",pidd[i]);
+            i++;
+            commandc++;
+	}	
+	//for (i = 0; i < array_count; i++) {
+	  //  waitpid(pidd[i], &status, 0);
+//	}
+       // while ((pid = wait(&status)) != -1)
+          //  fprintf(stderr, "Process %d completed and exited.\n",pid);
 
+	//close(0);  close(1);
+
+	//close(child[i].fd[1]);  close(child[i-1].fd[0]);
 	i=0;	
 	commandc=0;
 	array_count = 0;
@@ -252,8 +274,6 @@ int main(int argc, char *argv[], char *envp[]){
 	pipe_count = 0;
 	count = 0;
 	
-	while ((pid = wait(&status)) != -1)
-	    fprintf(stderr, "Process #%d completed and exited.\n", pid);
 	//sleep(1);	
 	//printf("ee468>> "); /* Prompt */
 	
@@ -262,4 +282,3 @@ int main(int argc, char *argv[], char *envp[]){
     return 0;
 }
 
-// http://101.lv/learn/C++
