@@ -208,6 +208,7 @@ int main(int argc, char *argv[], char *envp[]){
 		printf("Child is here! with i=%d\n",i);
 		// child gets input from previous command,
 		// if it's not the first command
+		
 		if (i != 0) {
 		    close(child[i-1].fd[1]);
 		    if (dup2(child[i-1].fd[0],0) < 0) {
@@ -238,12 +239,13 @@ int main(int argc, char *argv[], char *envp[]){
 		    //exit(1);
 		}
 		exit(1);	
-		//wait(&status);	
+		wait(&status);	
 	    }
-	    else if ((pidd[i] != 0) && (pidd[i] > 0)) {
-		printf("parent is here! with i=%d\n",i);
+	  //  else if ((pidd[i] != 0) && (pidd[i] > 0)) {
+	//	printf("parent is here! with i=%d\n",i);
+		
 		//close(child[i].fd[0]); close(child[i].fd[1]);  // parent close all pipes
-	    } 
+	    //} 
 	    else if ( pidd[i] < 0) {
 		perror("fork");
 		//exit(1);

@@ -1,3 +1,8 @@
+// Bronson Edralin
+// EE468
+// HW4
+// 9/24/14
+
 /* 
  * This is an implementation of merge sort assuming the
  * data is an array a[] of length N, and N is a power of 2.
@@ -25,8 +30,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #define N 32 
+
+typedef struct {
+    int index;
+    int arrsize;
+}Data;
 
 /* Global variables -- be careful */
 int a[N];     /* Array to sort */
@@ -34,9 +45,9 @@ int temp[N];  /* Temporary storage */
 
 void genvalues(int n); /* Initializes array a[] */
 void prnvalues(int n); /* Prints array a[] */
-void merge(int first, int arrsize); /* Merges subarrays */
+void *merge(void *array_context); /* Merges subarrays */
 
-main() 
+int main() 
 {
 
 int arrsize;    /* Size of subarrays to merge */
@@ -45,23 +56,51 @@ int newarrsize;  /* New subarray size */
 int newnumarr;   /* New number of subarrays */
 int i;
 
+int count_thrd = 0;
+Data A[N];
+pthread_t thread_index[N];
+
+
 genvalues(N); /* Initialize a[] with random values */
-printf("Initial values:\n");
+printf("\nInitial values:\n");
 prnvalues(N); /* Display the values */
 
 arrsize = 1;
+numarr = 2;
 
 while (numarr > 1) {
    arrsize= 2*arrsize; /* merge subarrays to double subarray size */
    numarr = N/arrsize;
+   printf("\n\n......................................................\n\n");
+   count_thrd = 0;
    for (i=0; i<N; i+=arrsize) {
-      merge(i, arrsize);
+      A[count_thrd].index = i;
+      A[count_thrd].arrsize = arrsize;
+      if(pthread_create(&thread_index[count_thrd],NULL,(void *)&merge,(void *)&A[count_thrd])) {
+         printf("\nError in creating thread...\n");
+	 exit(1);
+      }
+      else {
+         printf("Thread %d created...",count_thrd+1);
+	 count_thrd++;
+      }  
    }
-}
+   printf("\n\n");
+   for(i=0;i < count_thrd; i++) {
 
+      if(pthread_join(thread_index[i], NULL)) {
+         printf("\nError in joining thread...\n");
+         exit(1);
+      }
+      printf("Thread %d Successful...",i+1);
+   }
+    
+
+}
+printf("\n\n......................................................\n\n");
 printf("\nOutput:\n");
 prnvalues(N); /* Display the sorted values */
-
+printf("\n");
 }
 
 /*
@@ -71,7 +110,7 @@ prnvalues(N); /* Display the sorted values */
  *    Then it copies temp[first],..., temp[last-1] back into
  *    a[i],..., a[last-1].
  */
-void merge(int first, int arrsize)
+void *merge(void *array_context)
 {
 int leftptr;
 int rightptr;
@@ -80,20 +119,22 @@ int last;
 int k;
 int delay;
 
+Data *A = array_context;
+
 /* 
  * Do not delete the next three lines.  They cause the function to
  * delay by a amount that is proportional to the subarray it is merging
  */
-if (arrsize > 0) delay = arrsize;
+if (A->arrsize > 0) delay = A->arrsize;
 else delay = 1;
 usleep(delay*250000);
 
-midpoint= first + (arrsize/2);
-last = first + arrsize;
-leftptr = first;
+midpoint= A->index + (A->arrsize/2);
+last = A->index + A->arrsize;
+leftptr = A->index;
 rightptr = midpoint; 
 
-for(k=first; k<last; k++) {
+for(k=A->index; k<last; k++) {
    if (leftptr >= midpoint) temp[k] = a[rightptr++];
    else if (rightptr >= last) temp[k] = a[leftptr++];
    else if (a[leftptr] < a[rightptr]) temp[k] = a[leftptr++];
@@ -101,8 +142,9 @@ for(k=first; k<last; k++) {
    else printf("There's a bug \n");
 }
 
-for(k=first; k<last; k++) a[k] = temp[k];
+for(k=A->index; k<last; k++) a[k] = temp[k];
 
+return 0;
 }
 
 
@@ -123,7 +165,7 @@ for (i=0; i<n; i++) {
    a[i] = current;
 }
 }
-
+//Data
 /*
  * Prints the values in the array a[]
  */
