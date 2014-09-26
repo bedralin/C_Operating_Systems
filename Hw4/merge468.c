@@ -1,9 +1,8 @@
-// Bronson Edralin
-// EE468
-// HW4
-// 9/24/14
-
-/* 
+/* Bronson Edralin
+ * EE468
+ * HW4 merge sort
+ * 9/24/14
+ *
  * This is an implementation of merge sort assuming the
  * data is an array a[] of length N, and N is a power of 2.
  *
