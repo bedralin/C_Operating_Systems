@@ -1,5 +1,5 @@
 /* Bronson Edralin
- * EE468
+ * EE468 Operating Systems
  * HW4 merge sort
  * 9/24/14
  *
