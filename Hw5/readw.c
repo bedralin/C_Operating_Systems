@@ -107,7 +107,7 @@ int i;
  * Load player stats
  */
 pFile = fopen("playerstats","r");
-fscanf(pFile, "%d%", &numplayers);
+fscanf(pFile, "%d", &numplayers);
 for (i=0; i<numplayers; i++) {
    fscanf(pFile, "%s %d", cstring, &duration);
    player[i].ptype = cstring[0];
