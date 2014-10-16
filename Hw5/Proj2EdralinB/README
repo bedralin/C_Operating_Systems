@@ -1,0 +1,10 @@
+Author: Bronson Edralin
+Subject: EE468 OS, HW#5
+
+compile it:
+gcc -o readwrite readwrite.c
+
+Run it:
+./readwrite playerstats
+
+
