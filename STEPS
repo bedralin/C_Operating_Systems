@@ -1,0 +1,9 @@
+sudo apt-get update
+sudo apt-get install linux-headers-$(uname -r)
+
+make
+insmod nothing.ko   // cmd allows installation of module in kernel
+lsmod  // can view loaded modules
+rmmod nothing  //removes module from kernel
+
+
