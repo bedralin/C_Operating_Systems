@@ -1,0 +1,12 @@
+/* Bronson Edralin
+ * EE468 OS
+ * Final Exam
+ * Problem #5
+ * 12/18/14
+ */
+
+To compile:
+gcc sched.c
+
+To execute:
+./a.out

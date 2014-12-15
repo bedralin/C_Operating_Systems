@@ -1,0 +1,12 @@
+/* Bronson Edralin
+ * EE468 OS
+ * Final Exam
+ * Problem #1
+ * 12/18/14
+ */
+
+To compile:
+gcc child.c
+
+To execute:
+./a.out

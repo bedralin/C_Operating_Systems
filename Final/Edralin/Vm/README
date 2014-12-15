@@ -1,0 +1,13 @@
+/* Bronson Edralin
+ * EE468 OS
+ * Final Exam
+ * Problem #6
+ * 12/18/14
+ */
+
+To compile:
+gcc vm.c
+
+To execute:
+./a.out address.txt
+
